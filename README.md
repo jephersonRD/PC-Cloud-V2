@@ -158,17 +158,6 @@ sudo systemctl status docker
 
 <br>
 
-### ✅ Paso 5: Verificar configuración
-
-```bash
-docker info | grep "Docker Root Dir"
-```
-
-**Salida esperada:**
-```
-Docker Root Dir: /tmp/docker-data
-```
-
 ---
 
 ## 🧱 Configuración del contenedor
@@ -265,11 +254,6 @@ docker ps
 docker-compose -f linux-desktop.yml logs -f linux-desktop
 ```
 
-**Salida esperada:**
-```
-linux-desktop-pcfree   linuxserver/webtop:ubuntu-kde   Up 2 minutes   0.0.0.0:3000->3000/tcp, 0.0.0.0:5900->5900/tcp
-```
-
 ---
 
 ## 🌐 Acceso al escritorio
@@ -314,84 +298,6 @@ linux-desktop-pcfree   linuxserver/webtop:ubuntu-kde   Up 2 minutes   0.0.0.0:30
 
 ---
 
-## 🛠️ Gestión y mantenimiento
-
-### 📋 Comandos básicos
-
-| Acción | Comando | Descripción |
-|--------|---------|-------------|
-| 📊 **Ver logs** | `docker-compose -f linux-desktop.yml logs -f` | Monitorear actividad |
-| ⏹️ **Detener** | `docker-compose -f linux-desktop.yml down` | Parar el contenedor |
-| 🔄 **Reiniciar** | `docker-compose -f linux-desktop.yml restart` | Reiniciar servicio |
-| 📋 **Estado** | `docker ps` | Ver contenedores activos |
-| 🗑️ **Limpiar** | `docker system prune -a` | Eliminar datos no usados |
-
-### 📊 Monitoreo de recursos
-
-```bash
-# Ver uso de CPU/RAM en tiempo real
-docker stats linux-desktop-pcfree
-
-# Ver espacio usado por Docker
-docker system df
-
-# Ver información detallada del contenedor
-docker inspect linux-desktop-pcfree
-```
-
-### 💾 Backup y restauración
-
-```bash
-# Crear backup del volumen
-docker run --rm -v linux-desktop-data:/data -v $(pwd):/backup alpine tar czf /backup/desktop-backup.tar.gz -C /data .
-
-# Restaurar desde backup
-docker run --rm -v linux-desktop-data:/data -v $(pwd):/backup alpine tar xzf /backup/desktop-backup.tar.gz -C /data
-```
-
----
-
-## 🔐 Configuración de seguridad
-
-### 🛡️ Cambiar contraseñas por defecto
-
-**1. Contraseña de sudo:**
-```bash
-# Entrar al contenedor
-docker exec -it linux-desktop-pcfree bash
-
-# Cambiar contraseña del usuario
-passwd pcfree
-```
-
-**2. Contraseña VNC:**
-Edita el archivo `linux-desktop.yml` y cambia:
-```yaml
-- VNC_PASSWORD=tu_nueva_contraseña_vnc
-```
-
-### 🔒 Medidas de seguridad adicionales
-
-**Para entornos de producción:**
-
-```yaml
-# Agregar al archivo docker-compose
-environment:
-  - AUTHENTICATION_METHOD=password
-  - HTTP_PASSWORD=tu_contraseña_web
-  - ENABLE_LOSSLESS=false
-  - SHOW_DESKTOP=false
-```
-
-**Configurar firewall:**
-```bash
-# Solo permitir conexiones locales
-sudo ufw allow from 127.0.0.1 to any port 3000
-sudo ufw allow from 127.0.0.1 to any port 5900
-```
-
----
-
 ## 🧯 Solución de problemas
 
 ### ❌ Problema: El contenedor no inicia
@@ -423,130 +329,6 @@ htop
 docker stats
 ```
 
-**✅ Optimizaciones:**
-
-1. **Aumentar memoria compartida:**
-```yaml
-volumes:
-  - /dev/shm:/dev/shm:rw
-shm_size: 2gb
-```
-
-2. **Optimizar resolución:**
-```yaml
-environment:
-  - RESOLUTION=1366x768  # Menor resolución = mejor rendimiento
-```
-
-3. **Limitar recursos:**
-```yaml
-deploy:
-  resources:
-    limits:
-      memory: 2G
-      cpus: '1.0'
-```
-
-### 🌐 Problema: No se puede conectar por web
-
-**✅ Lista de verificación:**
-- [ ] ¿El contenedor está ejecutándose? (`docker ps`)
-- [ ] ¿El puerto 3000 está libre? (`netstat -tlnp | grep 3000`)
-- [ ] ¿Firewall bloqueando? (`sudo ufw status`)
-- [ ] ¿URL correcta? (`http://localhost:3000`)
-
-### 🖥️ Problema: Fallos en VNC
-
-**✅ Soluciones:**
-```bash
-# Verificar puerto VNC
-telnet localhost 5900
-
-# Revisar configuración VNC en el contenedor
-docker exec -it linux-desktop-pcfree cat /config/.vnc/config
-```
-
----
-
-## 📊 Optimización avanzada
-
-### ⚡ Configuración para máximo rendimiento
-
-```yaml
-# Versión optimizada del docker-compose.yml
-version: '3.8'
-
-services:
-  linux-desktop:
-    image: linuxserver/webtop:ubuntu-kde
-    container_name: linux-desktop-pcfree
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
-      - RESOLUTION=1366x768
-      - SUDO_PASSWORD=pcfree123
-      - VNC_PASSWORD=vnc123456
-      # Optimizaciones de rendimiento
-      - DISABLE_IPV6=true
-      - ENABLE_LOSSLESS=false
-    ports:
-      - "3000:3000"
-      - "5900:5900"
-    volumes:
-      - linux-desktop-data:/config
-      - /dev/shm:/dev/shm:rw
-    # Límites de recursos
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: '2.0'
-        reservations:
-          memory: 1G
-          cpus: '1.0'
-    # Memoria compartida aumentada
-    shm_size: 1gb
-    restart: unless-stopped
-
-volumes:
-  linux-desktop-data:
-```
-
-### 🎛️ Scripts de automatización
-
-**Script de inicio automático:**
-```bash
-#!/bin/bash
-# Archivo: start-pcfree.sh
-
-echo "🚀 Iniciando PC-Free Desktop..."
-
-# Verificar Docker
-if ! docker info > /dev/null 2>&1; then
-    echo "❌ Docker no está ejecutándose"
-    exit 1
-fi
-
-# Iniciar contenedor
-docker-compose -f linux-desktop.yml up -d
-
-# Esperar a que esté listo
-echo "⏳ Esperando que el servicio esté listo..."
-sleep 30
-
-# Verificar estado
-if docker ps | grep -q "linux-desktop-pcfree"; then
-    echo "✅ PC-Free Desktop iniciado correctamente"
-    echo "🌐 Accede en: http://localhost:3000"
-    echo "🖥️ VNC: localhost:5900"
-else
-    echo "❌ Error al iniciar el contenedor"
-    docker-compose -f linux-desktop.yml logs
-fi
-```
-
----
 
 ## 🧰 Herramientas y aplicaciones incluidas
 
