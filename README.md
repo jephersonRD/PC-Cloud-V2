@@ -190,63 +190,39 @@ version: '3.8'
 services:
   linux-desktop:
     image: linuxserver/webtop:ubuntu-kde
-    container_name: linux-desktop-pcfree
-    hostname: pcfree-desktop
+    container_name: linux-desktop
     environment:
-      # 👤 Usuario y permisos
       - PUID=1000
       - PGID=1000
-      
-      # 🌍 Configuración regional
-      - TZ=America/New_York
+      - TZ=America/Santo_Domingo
       - KEYBOARD=en-us-qwerty
-      
-      # 🖥️ Configuración de pantalla
-      - WEBPAGE_TITLE=PC-Free Linux Desktop
+      - WEBPAGE_TITLE=Ubuntu KDE
       - RESOLUTION=1920x1080
+      - SUDO_PASSWORD=123456
       - NOVNC_ENABLE=true
-      
-      # 🔐 Seguridad
-      - SUDO_PASSWORD=pcfree123
       - VNC_PASSWORD=vnc123456
-      
-      # ⚡ Optimización
-      - CUSTOM_USER=pcfree
-      - PASSWORD=pcfree123
-      
     ports:
-      # 🌐 Acceso web
       - "3000:3000"
-      # 🖥️ Acceso VNC
       - "5900:5900"
-      
     volumes:
-      # 💾 Datos persistentes
-      - linux-desktop-data:/config
-      # 🚀 Memoria compartida (mejora rendimiento)
+      - linux-data:/config
       - /dev/shm:/dev/shm
-      
-    # 🛡️ Permisos especiales
     cap_add:
       - SYS_ADMIN
-      
     devices:
       - /dev/fuse
-      
     security_opt:
       - seccomp:unconfined
-      
-    # 🔄 Política de reinicio
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 16G
     restart: unless-stopped
-    
-    # 🏷️ Etiquetas para organización
-    labels:
-      - "project=pc-free"
-      - "environment=development"
 
 volumes:
-  linux-desktop-data:
-    driver: local
+  linux-data:
+
 ```
 
 </details>
